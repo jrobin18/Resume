@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Game</title>
+    <link rel="stylesheet" type="text/css" href="css/mystyles.css">
+</head>
+<body>
+    <!-- Memory Game -->
+<div class="stars" id="stars"></div>
+
+<div class="game-wrapper">
+  <h1>Memory Game</h1>
+  <p class="subtitle">Flip cards and find all matching pairs!</p>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Moves</div>
+      <div class="stat-value" id="moves">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Matches</div>
+      <div class="stat-value" id="matches">0 / 8</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Time</div>
+      <div class="stat-value" id="timer">0s</div>
+    </div>
+  </div>
+
+  <div class="win-banner" id="win-banner">
+    <div class="win-emoji">🎉</div>
+    <h2>You won!</h2>
+    <p id="win-msg"></p>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="controls">
+    <button class="btn btn-primary" onclick="startGame()">New Game</button>
+    <button class="btn" onclick="startGame()">Reset</button>
+  </div>
+</div>
+<script>
+  const emojis = ['🐶','🐱','🦊','🐻','🐼','🐨','🦁','🐸'];
+  let flipped = [], matched = 0, moves = 0, seconds = 0, timer = null, locked = false;
+
+  function shuffle(arr) {
+    return [...arr].sort(() => Math.random() - 0.5);
+  }
+
+  function startGame() {
+    clearInterval(timer);
+    flipped = []; matched = 0; moves = 0; seconds = 0; locked = false;
+    document.getElementById('moves').textContent = '0';
+    document.getElementById('matches').textContent = '0 / 8';
+    document.getElementById('timer').textContent = '0s';
+    document.getElementById('win-banner').style.display = 'none';
+
+    const deck = shuffle([...emojis, ...emojis]);
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+
+    deck.forEach((emoji) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.emoji = emoji;
+      card.innerHTML = `
+        <div class="card-inner">
+          <div class="card-front">?</div>
+          <div class="card-back">${emoji}</div>
+        </div>`;
+      card.addEventListener('click', () => flipCard(card));
+      grid.appendChild(card);
+    });
+
+    timer = setInterval(() => {
+      seconds++;
+      document.getElementById('timer').textContent = seconds + 's';
+    }, 1000);
+
+    const starsContainer = document.getElementById('stars');
+    starsContainer.innerHTML = '';
+    for (let i = 0; i < 80; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      const size = Math.random() * 2.5 + 0.5;
+      star.style.cssText = `
+        width: ${size}px; height: ${size}px;
+        top: ${Math.random() * 100}%;
+        left: ${Math.random() * 100}%;
+        animation-delay: ${Math.random() * 3}s;
+        animation-duration: ${2 + Math.random() * 3}s;
+      `;
+      starsContainer.appendChild(star);
+    }
+  }
+
+  function flipCard(card) {
+    if (locked || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+    card.classList.add('flipped');
+    flipped.push(card);
+
+    if (flipped.length === 2) {
+      locked = true;
+      moves++;
+      document.getElementById('moves').textContent = moves;
+
+      const [a, b] = flipped;
+      if (a.dataset.emoji === b.dataset.emoji) {
+        a.classList.add('matched');
+        b.classList.add('matched');
+        matched++;
+        document.getElementById('matches').textContent = matched + ' / 8';
+        flipped = [];
+        locked = false;
+
+        if (matched === emojis.length) {
+          clearInterval(timer);
+          document.getElementById('win-banner').style.display = 'block';
+          document.getElementById('win-msg').textContent =
+            `Completed in ${moves} moves and ${seconds} seconds!`;
+        }
+      } else {
+        setTimeout(() => {
+          a.classList.remove('flipped');
+          b.classList.remove('flipped');
+          flipped = [];
+          locked = false;
+        }, 950);
+      }
+    }
+  }
+
+  startGame();
+</script>
+</body>
+</html>
